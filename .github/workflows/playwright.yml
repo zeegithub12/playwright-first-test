@@ -1,4 +1,3 @@
-
 name: Playwright Tests (Docker)
 
 on:
@@ -19,14 +18,8 @@ jobs:
       - name: Build Docker image
         run: docker build -t playwright-tests .
 
-      - name: Run tests in Docker
-        run: docker run --rm playwright-tests
-
-      - name: Copy Playwright report from container
-        run: |
-          docker create --name temp-container playwright-tests
-          docker cp temp-container:/app/playwright-report ./playwright-report
-          docker rm temp-container
+      - name: Run Playwright tests in Docker
+        run: docker run --rm -v ${{ github.workspace }}/playwright-report:/app/playwright-report playwright-tests
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
