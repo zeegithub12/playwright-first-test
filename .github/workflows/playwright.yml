@@ -1,25 +1,37 @@
-name: Playwright Tests
+
+name: Playwright Tests (Docker)
+
 on:
   push:
     branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
 jobs:
   test:
-    timeout-minutes: 60
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
-      with:
-        node-version: lts/*
-    - name: Install dependencies
-      run: npm ci
-    - name: Install Playwright Browsers
-      run: npx playwright install --with-deps
-    - name: Run Playwright tests
-      run: npx playwright test
-    - uses: actions/upload-artifact@v4
-      if: ${{ !cancelled() }}
-      with:
-        name: playwright-report
-        path: playwright-report/
-        retention-days: 30
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t playwright-tests .
+
+      - name: Run tests in Docker
+        run: docker run --rm playwright-tests
+
+      - name: Copy Playwright report from container
+        run: |
+          docker create --name temp-container playwright-tests
+          docker cp temp-container:/app/playwright-report ./playwright-report
+          docker rm temp-container
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
